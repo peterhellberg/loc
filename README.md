@@ -18,6 +18,6 @@ go get github.com/peterhellberg/loc
 
 ## Environment variables
 
- - *PORT*
- - *GEOLITE2_CITY_PATH*
- - *MONGOHQ_URL*
+ - **PORT**
+ - **GEOLITE2_CITY_PATH**
+ - **MONGOHQ_URL**
