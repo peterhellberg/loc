@@ -40,9 +40,9 @@ func (v *visitEvent) HasEnglishCityName() bool {
 	return v.CityName("en") != ""
 }
 
-func (v *visitEvent) JSON() string {
-	return fmt.Sprintf(`{"city":"%s","lat":%v,"long":%v}`,
-		v.CityName("en"), v.Location.Latitude, v.Location.Longitude)
+func (v *visitEvent) JSON(id int) string {
+	return fmt.Sprintf(`{"city":"%s","lat":%v,"long":%v,"id":"v%v"}`,
+		v.CityName("en"), v.Location.Latitude, v.Location.Longitude, id)
 }
 
 func main() {
@@ -96,8 +96,8 @@ func main() {
 
 					if v.HasEnglishCityName() {
 						id++
-						es.SendEventMessage(v.JSON(), "visit", strconv.Itoa(id))
-						log.Println(v.JSON())
+						es.SendEventMessage(v.JSON(id), "visit", strconv.Itoa(id))
+						log.Println(v.JSON(id))
 					}
 				}
 			}

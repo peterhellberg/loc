@@ -68,30 +68,37 @@
 
 			var es = new EventSource('/events');
 
-			var scale = d3.scale.linear()
-				.domain([0,100])
-				.range([1,0]);
+			es.addEventListener('visit', function(e) {
+				var doc = JSON.parse(e.data);
 
-			d3.timer(function() {
-				svg.selectAll("circle").data(latestViews).exit().remove();
+				latestViews.unshift(doc);
 
-				svg.selectAll("circles").data(latestViews).enter()
+				while(latestViews.length > 32) {
+					latestViews.pop();
+				}
+
+				svg.selectAll("circles")
+					.data(latestViews, function(d){return d.id;}).enter()
 					.append("circle")
-					.attr("r", function(d, i) { return 5 * scale(i); })
-					.attr("stroke", "#840000")
+					.attr("r", 0)
+					.attr("stroke", "#D00")
 					.style("fill", "#D00")
 					.attr("transform", function(d) {
 						return "translate(" + projection([d.long,d.lat]) + ")";
 					})
+					.transition()
+					.duration(300)
+    			.attr("r", 3)
+					.attr("stroke", "#840000")
 
-			}, 100)
-
-			es.addEventListener('visit', function(e) {
-				doc = JSON.parse(e.data);
-				latestViews.unshift(doc)
-				if(latestViews.length > 100) { latestViews.pop() }
-
-				svg.selectAll("circle").data([]).exit().remove();
+				svg.selectAll("circle")
+					.data(latestViews, function(d){return d.id;})
+					.exit()
+					.transition()
+					.duration(600)
+    			.attr("r", 2)
+    			.style("opacity", 0)
+    			.remove();
 			}, true);
 		</script>
 	</body>
