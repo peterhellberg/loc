@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html>
+	<head>
+		<style>
+			body {
+				margin: 0;
+			}
+
+			svg {
+				background: #fff;
+			}
+
+			.land {
+				fill: #EEEEEE;
+				fill-opacity: 0.8;
+				stroke: #515151;
+				stroke-width: 0.5px;
+			}
+
+			.graticule {
+				fill: none;
+				stroke: #D00;
+				stroke-width: 0.2px;
+			}
+		</style>
+	</head>
+	<body>
+		<script src="http://d3js.org/d3.v3.min.js"></script>
+		<script src="http://d3js.org/d3.geo.projection.v0.min.js"></script>
+		<script src="http://d3js.org/topojson.v0.min.js"></script>
+		<script>
+			var width = 1365, height = 663;
+
+			var latestViews = [];
+
+			var projection = d3.geo.satellite()
+				.translate([width/2, -10])
+				.distance(1.11)
+				.scale(4100)
+				.center([30, 45])
+				.rotate([-10, -55, -22])
+				.tilt(12)
+				.clipAngle(Math.acos(1 / 1.12) * 180 / Math.PI - 1e-10);
+
+			var path = d3.geo.path()
+				.projection(projection);
+
+			var graticule = d3.geo.graticule()
+				.step([1, 1]);
+
+			var svg = d3.select("body").append("svg")
+				.attr("width", width)
+				.attr("height", height);
+
+			svg.append("path")
+				.datum(graticule)
+				.attr("class", "graticule")
+				.attr("d", path);
+
+			var land = svg.append("g");
+
+			d3.json('/data/europe.topo.json', function(err, data) {
+				land.append("path")
+					.datum(topojson.object(data, data.objects.europe))
+					.attr("class", "land")
+					.attr("d", path);
+				});
+
+			var es = new EventSource('/events');
+
+			es.addEventListener('visit', function(e) {
+				doc = JSON.parse(e.data);
+				latestViews.unshift(doc)
+				if(latestViews.length > 150) { latestViews.pop() }
+
+				var circle = svg.selectAll("circle").data(latestViews);
+				circle.exit().remove();
+
+				svg.selectAll("circles")
+					.data(latestViews)
+					.enter()
+					.append("circle")
+					.attr("r", 5)
+					.attr("stroke", "#FFF")
+					.attr("stroke-width", 0.4)
+					.style("fill", "#D00")
+					.attr("transform", function(d) {
+						return "translate(" + projection([d.long,d.lat]) + ")";}
+					)
+			}, true);
+		</script>
+	</body>
+</html>
