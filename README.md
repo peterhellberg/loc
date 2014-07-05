@@ -2,8 +2,6 @@
 
 [SSE](http://en.wikipedia.org/wiki/Server-sent_events) stream of visitor locations plotted on a map using [D3.js](http://d3js.org/).
 
-## Example
-
 ![Loc example map](http://assets.c7.se/skitch/loc_-_plot_visits_using_gtm_maxminddb-golang_eventsource_and_d3-20140705-203059.png)
 
 ## Requirements
