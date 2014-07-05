@@ -68,25 +68,30 @@
 
 			var es = new EventSource('/events');
 
+			var scale = d3.scale.linear()
+				.domain([0,100])
+				.range([1,0]);
+
+			d3.timer(function() {
+				svg.selectAll("circle").data(latestViews).exit().remove();
+
+				svg.selectAll("circles").data(latestViews).enter()
+					.append("circle")
+					.attr("r", function(d, i) { return 5 * scale(i); })
+					.attr("stroke", "#840000")
+					.style("fill", "#D00")
+					.attr("transform", function(d) {
+						return "translate(" + projection([d.long,d.lat]) + ")";
+					})
+
+			}, 100)
+
 			es.addEventListener('visit', function(e) {
 				doc = JSON.parse(e.data);
 				latestViews.unshift(doc)
-				if(latestViews.length > 150) { latestViews.pop() }
+				if(latestViews.length > 100) { latestViews.pop() }
 
-				var circle = svg.selectAll("circle").data(latestViews);
-				circle.exit().remove();
-
-				svg.selectAll("circles")
-					.data(latestViews)
-					.enter()
-					.append("circle")
-					.attr("r", 5)
-					.attr("stroke", "#FFF")
-					.attr("stroke-width", 0.4)
-					.style("fill", "#D00")
-					.attr("transform", function(d) {
-						return "translate(" + projection([d.long,d.lat]) + ")";}
-					)
+				svg.selectAll("circle").data([]).exit().remove();
 			}, true);
 		</script>
 	</body>
