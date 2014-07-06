@@ -6,12 +6,12 @@ import (
 	"net"
 	"net/http"
 	"os"
-	"strconv"
 
 	"github.com/antage/eventsource"
 	"github.com/oschwald/maxminddb-golang"
 	"github.com/rwynn/gtm"
 	"labix.org/v2/mgo"
+	"labix.org/v2/mgo/bson"
 )
 
 var visitsNamespace string
@@ -30,6 +30,9 @@ type visitEvent struct {
 	City struct {
 		Names map[string]string `maxminddb:"names"`
 	} `maxminddb:"city"`
+	Country struct {
+		IsoCode string `maxminddb:"iso_code"`
+	} `maxminddb:"country"`
 }
 
 func (v *visitEvent) CityName(lang string) string {
@@ -40,9 +43,18 @@ func (v *visitEvent) HasEnglishCityName() bool {
 	return v.CityName("en") != ""
 }
 
-func (v *visitEvent) JSON(id int) string {
-	return fmt.Sprintf(`{"city":"%s","lat":%v,"long":%v,"id":"v%v"}`,
-		v.CityName("en"), v.Location.Latitude, v.Location.Longitude, id)
+func (v *visitEvent) InScandinavia() bool {
+	return v.Country.IsoCode == "SE" ||
+		v.Country.IsoCode == "NO" ||
+		v.Country.IsoCode == "DK" ||
+		v.Country.IsoCode == "FI" ||
+		v.Country.IsoCode == "AX"
+}
+
+func (v *visitEvent) JSON(id string) string {
+	return fmt.Sprintf(`{"city":"%s","iso_code":"%s","lat":%v,"long":%v,"id":"%s"}`,
+		v.CityName("en"), v.Country.IsoCode,
+		v.Location.Latitude, v.Location.Longitude, id)
 }
 
 func main() {
@@ -60,6 +72,8 @@ func main() {
 	}
 	defer sess.Close()
 
+	sess.SetMode(mgo.Monotonic, true)
+
 	// Set the namespace of the visits collection
 	visitsNamespace = sess.DB("").Name + ".visits"
 
@@ -71,8 +85,6 @@ func main() {
 	http.Handle("/", http.FileServer(http.Dir(".")))
 
 	go func() {
-		id := 0
-
 		// Tail the OpLog
 		ops, errs := gtm.Tail(sess, &gtm.Options{nil, NewVisits})
 
@@ -87,6 +99,7 @@ func main() {
 				if ipStr, ok := op.Data["ip"]; ok {
 					// Parse the IP
 					ip := net.ParseIP(ipStr.(string))
+					id := op.Data["_id"].(bson.ObjectId).Hex()
 
 					var v visitEvent
 					err = db.Lookup(ip, &v)
@@ -95,9 +108,13 @@ func main() {
 					}
 
 					if v.HasEnglishCityName() {
-						id++
-						es.SendEventMessage(v.JSON(id), "visit", strconv.Itoa(id))
-						log.Println(v.JSON(id))
+						if v.InScandinavia() {
+							es.SendEventMessage(v.JSON(id), "visit", id)
+							fmt.Print(".")
+						} else {
+							fmt.Print("\n")
+							log.Println(v.JSON(id))
+						}
 					}
 				}
 			}
