@@ -78,21 +78,23 @@
 				}
 
 				svg.selectAll("circles")
-					.data(latestViews, function(d){return d.id;}).enter()
+					.data(latestViews, function(d){return "v" + d.id;}).enter()
 					.append("circle")
 					.attr("r", 0)
-					.attr("stroke", "#D00")
 					.style("fill", "#D00")
 					.attr("transform", function(d) {
 						return "translate(" + projection([d.long,d.lat]) + ")";
 					})
 					.transition()
 					.duration(300)
-    			.attr("r", 3)
+    			.attr("r", 7)
 					.attr("stroke", "#840000")
+					.transition()
+					.duration(300)
+    			.attr("r", 3)
 
 				svg.selectAll("circle")
-					.data(latestViews, function(d){return d.id;})
+					.data(latestViews, function(d){return "v" + d.id;})
 					.exit()
 					.transition()
 					.duration(600)
