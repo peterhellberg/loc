@@ -16,7 +16,7 @@ import (
 
 var visitsNamespace string
 
-// Only interested in inserts to the visits collection
+// NewVisits filters on inserts to the visits collection
 func NewVisits(op *gtm.Op) bool {
 	return op.Namespace == visitsNamespace && op.IsInsert()
 }
